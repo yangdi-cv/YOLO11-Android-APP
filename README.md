@@ -27,7 +27,7 @@ Android application for real-time object detection, segmentation, and pose estim
 
 ## Models
 
-Download YOLO models from [Ultralytics](https://github.com/ultralytics/ultralytics) and convert to TensorFlow Lite format.
+Download YOLO models from [Ultralytics](https://github.com/ultralytics/ultralytics) and convert to [TensorFlow Lite](https://github.com/ultralytics/yolo-flutter-app/releases/tag/v0.2.0) format.
 
 ## Build
 

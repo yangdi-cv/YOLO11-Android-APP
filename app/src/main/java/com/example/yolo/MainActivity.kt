@@ -278,7 +278,7 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
         }
         
         // Load new model
-        yoloView.setModel(modelFile, task, useGpu = false) { success ->
+        yoloView.setModel(modelFile, task, useGpu = true) { success ->
             Log.d(TAG, "Model load callback - success: $success for task: $taskName")
             if (success) {
                 // Get available classes from the model

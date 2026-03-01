@@ -199,6 +199,10 @@ class YOLOView @JvmOverloads constructor(
     private var predictor: Predictor? = null
     private var task: YOLOTask = YOLOTask.DETECT
     private var modelName: String = "Model"
+    
+    // Flag to track model loading state
+    @Volatile
+    private var isModelLoading = false
 
     // Camera config
     private var lensFacing = CameraSelector.LENS_FACING_BACK
@@ -418,6 +422,13 @@ class YOLOView @JvmOverloads constructor(
     // region Model / Task
 
     fun setModel(modelPath: String, task: YOLOTask, useGpu: Boolean = true, callback: ((Boolean) -> Unit)? = null) {
+        // Set loading state and clear previous inference result
+        post {
+            isModelLoading = true
+            inferenceResult = null
+            overlayView.invalidate() // Trigger redraw to show processing indicator
+        }
+        
         Executors.newSingleThreadExecutor().execute {
             try {
                 val newPredictor = when (task) {
@@ -439,8 +450,10 @@ class YOLOView @JvmOverloads constructor(
                     this.task = task
                     this.predictor = newPredictor
                     this.modelName = modelPath.substringAfterLast("/")
+                    isModelLoading = false
                     Log.d(TAG, "Model loaded successfully: $modelName, predictor set, task=$task")
                     Log.d(TAG, "Confidence threshold: $confidenceThreshold, IoU threshold: $iouThreshold")
+                    overlayView.invalidate() // Trigger redraw to hide processing indicator
                     modelLoadCallback?.invoke(true)
                     callback?.invoke(true)
                     // Ensure camera starts after model loads if it's not already running
@@ -454,6 +467,8 @@ class YOLOView @JvmOverloads constructor(
                     // Set predictor to null to ensure camera-only mode
                     this.predictor = null
                     this.modelName = "No Model"
+                    isModelLoading = false
+                    overlayView.invalidate() // Trigger redraw to hide processing indicator
                     modelLoadCallback?.invoke(false)
                     callback?.invoke(false)
                 }
@@ -805,9 +820,54 @@ class YOLOView @JvmOverloads constructor(
 
             Log.d(TAG, "OverlayView initialized with enhanced Z-order + hardware acceleration")
         }
+        
+        /**
+         * Draw processing indicator when model is loading or no inference result available
+         */
+        private fun drawProcessingIndicator(canvas: Canvas) {
+            val vw = width.toFloat()
+            val vh = height.toFloat()
+            
+            val text = "Processing..."
+            paint.textSize = 48f
+            paint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            paint.color = Color.WHITE
+            
+            val fm = paint.fontMetrics
+            val textWidth = paint.measureText(text)
+            val textHeight = fm.bottom - fm.top
+            val pad = 24f
+            
+            // Calculate centered position
+            val centerX = vw / 2f
+            val centerY = vh / 2f
+            
+            val bgLeft = centerX - (textWidth / 2) - pad
+            val bgTop = centerY - (textHeight / 2) - pad
+            val bgRight = centerX + (textWidth / 2) + pad
+            val bgBottom = centerY + (textHeight / 2) + pad
+            
+            // Draw background with rounded corners
+            paint.style = Paint.Style.FILL
+            paint.color = Color.argb(200, 0, 100, 200) // Semi-transparent blue background
+            val bgRect = RectF(bgLeft, bgTop, bgRight, bgBottom)
+            canvas.drawRoundRect(bgRect, 16f, 16f, paint)
+            
+            // Draw text
+            paint.color = Color.WHITE
+            val baseline = centerY - (fm.descent + fm.ascent) / 2
+            canvas.drawText(text, centerX - (textWidth / 2), baseline, paint)
+        }
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
+            
+            // Show processing indicator only when model is actively loading
+            if (isModelLoading) {
+                drawProcessingIndicator(canvas)
+                return
+            }
+            
             val result = inferenceResult ?: run {
                 Log.d(TAG, "OverlayView.onDraw: No inference result yet")
                 return
@@ -2012,6 +2072,7 @@ class YOLOView @JvmOverloads constructor(
             inferenceCallback = null
             streamCallback = null
             inferenceResult = null
+            isModelLoading = false // Clear loading state
 
             Log.d(TAG, "YOLOView stop completed successfully")
         } catch (e: Exception) {
