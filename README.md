@@ -9,7 +9,10 @@ Android application for real-time object detection, segmentation, and pose estim
 - **Pose**: Human pose estimation with keypoints
 - Real-time camera inference
 - Class filtering for detection and segmentation
-- GPU acceleration support
+- **CPU/GPU selection**: Choose between CPU or GPU for inference
+- **FPS display**: Real-time FPS counter in the top-right corner
+- **Processing indicator**: Visual feedback during model loading
+- GPU acceleration support (default)
 
 ## Requirements
 
@@ -24,6 +27,14 @@ Android application for real-time object detection, segmentation, and pose estim
    - `yolo11n-seg.tflite` (segmentation)
    - `yolo11n-pose.tflite` (pose)
 3. Build and run
+
+## Usage
+
+- **Task Selection**: Use the spinner at the bottom to switch between Detection, Segment, and Pose modes
+- **CPU/GPU Selection**: Use the device spinner to choose between CPU or GPU inference (default: GPU)
+- **Class Filtering**: Click the "Classes" button (available for Detection and Segment) to filter detected classes
+- **FPS Display**: Real-time FPS is shown in the top-right corner
+- **Model Loading**: A "Processing..." indicator appears during model loading or switching
 
 ## Models
 
