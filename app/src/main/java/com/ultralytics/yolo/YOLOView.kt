@@ -232,6 +232,7 @@ class YOLOView @JvmOverloads constructor(
     private lateinit var zoomLabel: TextView
     private lateinit var cameraButton: TextView
     private lateinit var confidenceLabel: TextView
+    private lateinit var fpsLabel: TextView
     private var showUIControls = false
 
     init {
@@ -328,6 +329,27 @@ class YOLOView @JvmOverloads constructor(
         addView(confidenceLabel)
         confidenceLabel.elevation = 1000f
         
+        // Add FPS label (top right, below system status bar)
+        fpsLabel = TextView(context).apply {
+            layoutParams = LayoutParams(
+                LayoutParams.WRAP_CONTENT,
+                LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.TOP or Gravity.END
+                // Add top margin to avoid system status bar (typically ~24-48dp)
+                topMargin = (56 * resources.displayMetrics.density).toInt()
+                rightMargin = 20
+            }
+            text = "FPS: --"
+            textSize = 20f
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.argb(200, 0, 150, 0))
+            setPadding(15, 10, 15, 10)
+            visibility = View.VISIBLE // Always visible
+        }
+        addView(fpsLabel)
+        fpsLabel.elevation = 1000f
+        
         // Initialize scale gesture detector for pinch-to-zoom
         scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
             override fun onScale(detector: ScaleGestureDetector): Boolean {
@@ -397,11 +419,12 @@ class YOLOView @JvmOverloads constructor(
     
     fun setShowUIControls(show: Boolean) {
         showUIControls = show
-        // Show/hide all UI controls
+        // Show/hide all UI controls (FPS label is always visible)
         val visibility = if (show) View.VISIBLE else View.GONE
         zoomLabel.visibility = visibility
         cameraButton.visibility = visibility
         confidenceLabel.visibility = visibility
+        // fpsLabel is always visible, don't hide it
     }
     
     fun setZoomLevel(zoomLevel: Float) {
@@ -426,6 +449,7 @@ class YOLOView @JvmOverloads constructor(
         post {
             isModelLoading = true
             inferenceResult = null
+            fpsLabel.text = "FPS: --" // Reset FPS display during loading
             overlayView.invalidate() // Trigger redraw to show processing indicator
         }
         
@@ -758,6 +782,12 @@ class YOLOView @JvmOverloads constructor(
                 }
                 
                 inferenceResult = resultWithOriginalImage
+
+                // Update FPS display
+                post {
+                    val fpsValue = resultWithOriginalImage.fps ?: 0.0
+                    fpsLabel.text = "FPS: ${String.format("%.1f", fpsValue)}"
+                }
 
                 // Log
                 

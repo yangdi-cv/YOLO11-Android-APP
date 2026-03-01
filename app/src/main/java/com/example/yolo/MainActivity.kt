@@ -18,8 +18,11 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
     private val TAG = "MainActivity"
     private lateinit var yoloView: YOLOView
     private lateinit var taskSpinner: Spinner
+    private lateinit var deviceSpinner: Spinner
     private lateinit var yoloViewContainer: FrameLayout
     private lateinit var classButton: Button
+    
+    private var useGpu = true // Default to GPU
     
     // Task configuration: [Display Name, Model File, YOLOTask]
     private val tasks = listOf(
@@ -45,6 +48,7 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
             
             // Initialize views
             taskSpinner = findViewById(R.id.taskSpinner)
+            deviceSpinner = findViewById(R.id.deviceSpinner)
             yoloViewContainer = findViewById(R.id.yoloViewContainer)
             classButton = findViewById(R.id.classButton)
             
@@ -63,8 +67,9 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
             yoloView.onLifecycleOwnerAvailable(this)
             Log.d(TAG, "onCreate: Lifecycle owner set")
             
-            // Setup spinner
+            // Setup spinners
             setupTaskSpinner()
+            setupDeviceSpinner()
             
             // Setup class button
             setupClassButton()
@@ -94,6 +99,34 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
                     Log.d(TAG, "Task changed from ${tasks[currentTaskIndex].first} to ${tasks[position].first}")
                     currentTaskIndex = position
                     loadModel(position)
+                }
+            }
+            
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                // Do nothing
+            }
+        }
+    }
+    
+    private fun setupDeviceSpinner() {
+        // Create adapter with device options
+        val deviceOptions = listOf("GPU", "CPU")
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, deviceOptions)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        deviceSpinner.adapter = adapter
+        
+        // Set default selection to GPU (index 0)
+        deviceSpinner.setSelection(0)
+        
+        // Set selection listener
+        deviceSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val newUseGpu = position == 0 // 0 = GPU, 1 = CPU
+                if (newUseGpu != useGpu) {
+                    Log.d(TAG, "Device changed from ${if (useGpu) "GPU" else "CPU"} to ${if (newUseGpu) "GPU" else "CPU"}")
+                    useGpu = newUseGpu
+                    // Reload model with new device setting
+                    loadModel(currentTaskIndex)
                 }
             }
             
@@ -277,8 +310,8 @@ class MainActivity : AppCompatActivity(), LifecycleOwner {
             classPopupWindow?.dismiss()
         }
         
-        // Load new model
-        yoloView.setModel(modelFile, task, useGpu = true) { success ->
+        // Load new model with selected device (GPU/CPU)
+        yoloView.setModel(modelFile, task, useGpu = useGpu) { success ->
             Log.d(TAG, "Model load callback - success: $success for task: $taskName")
             if (success) {
                 // Get available classes from the model

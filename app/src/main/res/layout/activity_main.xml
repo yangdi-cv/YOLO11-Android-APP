@@ -28,6 +28,16 @@
             android:background="@android:color/white"
             android:padding="12dp" />
 
+        <!-- CPU/GPU selection spinner -->
+        <Spinner
+            android:id="@+id/deviceSpinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:background="@android:color/white"
+            android:padding="12dp"
+            android:minWidth="100dp" />
+
         <!-- Class selection button (right, only visible for DETECT and SEGMENT) -->
         <Button
             android:id="@+id/classButton"
